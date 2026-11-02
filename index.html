@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+  <title>🇨🇳 Hànyǔ — Chinese Course Mini App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: #0b1120;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #ef4444;
+      --accent-gold: #f59e0b;
+      --success: #10b981;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg-color); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; padding-bottom: 80px; }
+    header { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(12px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--card-border); }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 1.1rem; }
+    .lang-toggle { background: #334155; border: 1px solid #475569; color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+    main { padding: 16px; flex: 1; max-width: 540px; margin: 0 auto; width: 100%; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.25); }
+    .hero { background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(245, 158, 11, 0.15)); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius); padding: 20px; margin-bottom: 14px; }
+    .hero h1 { font-size: 1.35rem; margin-bottom: 6px; }
+    .hero p { color: var(--text-muted); font-size: 0.9rem; line-height: 1.4; }
+    .tile { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 14px; cursor: pointer; }
+    .tile-icon { font-size: 1.8rem; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.06); border-radius: 12px; }
+    .tile-info { flex: 1; }
+    .tile-title { font-weight: 700; font-size: 0.98rem; margin-bottom: 2px; }
+    .tile-desc { font-size: 0.82rem; color: var(--text-muted); }
+    .badge { font-size: 0.7rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; text-transform: uppercase; margin-bottom: 4px; display: inline-block; }
+    .badge-red { background: rgba(239,68,68,0.2); color: #f87171; }
+    .badge-green { background: rgba(16,185,129,0.2); color: #34d399; }
+    .badge-gold { background: rgba(245,158,11,0.2); color: #fbbf24; }
+    .btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px; border-radius: 12px; font-size: 0.98rem; font-weight: 700; cursor: pointer; border: none; text-decoration: none; }
+    .btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4); }
+    .btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 800; }
+    .progress-bar { width: 100%; height: 6px; background: #334155; border-radius: 3px; margin-bottom: 14px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #ef4444, #f59e0b); width: 16%; transition: width 0.3s; }
+    .q-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 14px; line-height: 1.4; }
+    .option { background: #334155; padding: 12px 14px; border-radius: 10px; margin-bottom: 8px; cursor: pointer; font-size: 0.92rem; border: 1.5px solid transparent; }
+    .option.correct { background: rgba(16,185,129,0.2); border-color: var(--success); color: #34d399; font-weight: 700; }
+    .option.wrong { background: rgba(239,68,68,0.2); border-color: var(--accent); color: #f87171; }
+    .expl { background: #0f172a; border-left: 3px solid var(--accent-gold); padding: 10px 12px; border-radius: 0 8px 8px 0; font-size: 0.85rem; margin-bottom: 14px; display: none; }
+    .tone-btn { background: #1e293b; border: 1px solid #475569; color: #fff; padding: 12px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+    .tone-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+    nav { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(15, 23, 42, 0.96); backdrop-filter: blur(14px); border-top: 1px solid var(--card-border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+    .nav-btn { display: flex; flex-direction: column; align-items: center; gap: 3px; color: var(--text-muted); font-size: 0.72rem; font-weight: 600; cursor: pointer; border: none; background: none; }
+    .nav-btn.active { color: var(--accent-gold); }
+    .nav-btn span:first-child { font-size: 1.3rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span>🇨🇳</span>
+      <span id="txt-brand">Hànyǔ Chinese (汉语)</span>
+    </div>
+    <button class="lang-toggle" onclick="toggleLang()" id="btn-lang-toggle">🌐 EN</button>
+  </header>
+
+  <main>
+    <!-- TAB 1: HOME -->
+    <section id="tab-home" class="tab-content active">
+      <div class="hero">
+        <h1 id="h-title">Китайский с нуля до HSK 3</h1>
+        <p id="h-sub">Практический интерактивный курс с персональным куратором, фонетикой и закрытым чатом.</p>
+      </div>
+
+      <div class="tile" onclick="switchTab('quiz')">
+        <div class="tile-icon">🚀</div>
+        <div class="tile-info">
+          <span class="badge badge-red" id="b-quiz">Тест уровня</span>
+          <div class="tile-title" id="t-quiz-title">Пройти тест HSK 1–3</div>
+          <div class="tile-desc" id="t-quiz-desc">6 вопросов на тоны, грамматику и иероглифику</div>
+        </div>
+      </div>
+
+      <div class="tile" onclick="switchTab('tones')">
+        <div class="tile-icon">🎵</div>
+        <div class="tile-info">
+          <span class="badge badge-gold" id="b-tones">Тренажер</span>
+          <div class="tile-title" id="t-tones-title">4 тона китайского языка</div>
+          <div class="tile-desc" id="t-tones-desc">Интерактивное воспроизведение высоты звука (Pinyin)</div>
+        </div>
+      </div>
+
+      <div class="tile" onclick="switchTab('free')">
+        <div class="tile-icon">🎁</div>
+        <div class="tile-info">
+          <span class="badge badge-green" id="b-free">Бесплатно</span>
+          <div class="tile-title" id="t-free-title">Вводный урок с нуля</div>
+          <div class="tile-desc" id="t-free-desc">Pinyin, ключи и фразы для ресторанов и знакомств</div>
+        </div>
+      </div>
+
+      <div class="tile" onclick="switchTab('offer')">
+        <div class="tile-icon">💳</div>
+        <div class="tile-info">
+          <span class="badge badge-gold" id="b-sale">Скидка -60%</span>
+          <div class="tile-title" id="t-offer-title">Полный курс (299 ₽)</div>
+          <div class="tile-desc" id="t-offer-desc">Все материалы, разборы куратора и закрытый VIP-канал</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: TONES SYNTHESIZER -->
+    <section id="tab-tones" class="tab-content">
+      <div class="card">
+        <h2 id="tones-title" style="margin-bottom:8px;">🎵 4 тона китайского языка</h2>
+        <p id="tones-sub" style="color:var(--text-muted);font-size:0.9rem;line-height:1.4;margin-bottom:12px;">
+          В китайском от тона меняется смысл слова: <b>mā</b> (мама), <b>má</b> (конопля), <b>mǎ</b> (лошадь), <b>mà</b> (ругать).
+        </p>
+        <div class="tone-grid">
+          <div class="tone-btn" onclick="playTone(1)">
+            <span style="font-size:1.3rem;font-weight:800;color:#f87171;">1-й тон: mā (ˉ)</span>
+            <span style="font-size:0.8rem;color:var(--text-muted);">Высокий ровный 55</span>
+          </div>
+          <div class="tone-btn" onclick="playTone(2)">
+            <span style="font-size:1.3rem;font-weight:800;color:#fbbf24;">2-й тон: má (ˊ)</span>
+            <span style="font-size:0.8rem;color:var(--text-muted);">Восходящий 35</span>
+          </div>
+          <div class="tone-btn" onclick="playTone(3)">
+            <span style="font-size:1.3rem;font-weight:800;color:#34d399;">3-й тон: mǎ (ˇ)</span>
+            <span style="font-size:0.8rem;color:var(--text-muted);">Нисходяще-восходящий 214</span>
+          </div>
+          <div class="tone-btn" onclick="playTone(4)">
+            <span style="font-size:1.3rem;font-weight:800;color:#60a5fa;">4-й тон: mà (ˋ)</span>
+            <span style="font-size:0.8rem;color:var(--text-muted);">Резкий падающий 51</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: QUIZ -->
+    <section id="tab-quiz" class="tab-content">
+      <div class="card">
+        <div class="progress-bar"><div id="q-bar" class="progress-fill"></div></div>
+        <div id="q-box">
+          <div id="q-num" style="font-size:0.8rem;color:var(--accent-gold);font-weight:700;margin-bottom:6px;">ВОПРОС 1 ИЗ 6 • HSK 1</div>
+          <div id="q-txt" class="q-title">Какой тон имеет слог «mā» (мама) в китайском языке?</div>
+          <div id="q-opts"></div>
+          <div id="q-exp" class="expl"></div>
+          <button id="q-next" class="btn btn-red" style="display:none;" onclick="nextQuestion()">Следующий вопрос ➡️</button>
+        </div>
+        <div id="res-box" style="display:none;text-align:center;">
+          <div style="font-size:3rem;margin-bottom:8px;">🇨🇳</div>
+          <h2 id="res-head" style="margin-bottom:6px;">Тест HSK завершен!</h2>
+          <div id="res-level" class="badge badge-gold" style="font-size:1rem;padding:6px 14px;margin-bottom:14px;">HSK 2 Базовый</div>
+          <div class="card" style="background:#0f172a;text-align:left;">
+            <div style="font-weight:700;margin-bottom:8px;font-size:0.9rem;">Матрица компетенций:</div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.85rem;">
+              <span>🎵 Фонетика и 4 тона (HSK 1):</span><span id="m-tones" style="color:#10b981;font-weight:700;">100%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:0.85rem;">
+              <span>🧩 Грамматика (HSK 2):</span><span id="m-gram" style="color:#f59e0b;font-weight:700;">50%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:0.85rem;">
+              <span>🐉 Иероглифы и структуры (HSK 3):</span><span id="m-hsk3" style="color:#94a3b8;font-weight:700;">0%</span>
+            </div>
+          </div>
+          <button class="btn btn-gold" onclick="switchTab('offer')" style="margin-top:14px;">🎯 Получить курс под мой уровень</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: FREE COURSE -->
+    <section id="tab-free" class="tab-content">
+      <div class="card">
+        <h2 id="fr-title" style="margin-bottom:6px;">🎁 Бесплатный вводный курс</h2>
+        <p id="fr-sub" style="color:var(--text-muted);font-size:0.88rem;margin-bottom:14px;">Освойте систему Pinyin, 10 базовых ключей и главные фразы.</p>
+        <div style="background:#0f172a;padding:12px;border-radius:10px;margin-bottom:10px;border:1px solid #334155;">
+          <div style="font-weight:700;font-size:0.95rem;">Урок 1: Система Pinyin и 4 тона</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);">Различие звуков b/p, d/t, g/k и тональные модуляции</div>
+        </div>
+        <div style="background:#0f172a;padding:12px;border-radius:10px;margin-bottom:10px;border:1px solid #334155;">
+          <div style="font-weight:700;font-size:0.95rem;">Урок 2: 10 главных ключей (Радикалов)</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);">人 (человек), 口 (рот), 日 (солнце), 月 (луна), 木 (дерево)</div>
+        </div>
+        <div style="background:#0f172a;padding:12px;border-radius:10px;margin-bottom:14px;border:1px solid #334155;">
+          <div style="font-weight:700;font-size:0.95rem;">Урок 3: Диалоги в ресторане и такси</div>
+          <div style="font-size:0.82rem;color:var(--text-muted);">你好 (Nǐ hǎo), 这个多少钱? (Сколько стоит?), 买单 (Счет!)</div>
+        </div>
+        <a class="btn btn-red" href="https://telegra.ph/Vvodnyj-kurs-kitajskogo-yazyka-s-nulya-01-01" target="_blank">📖 Читать полный вводный лонгрид</a>
+      </div>
+    </section>
+
+    <!-- TAB 5: OFFER -->
+    <section id="tab-offer" class="tab-content">
+      <div class="card">
+        <span class="badge badge-gold">СПЕЦПРЕДЛОЖЕНИЕ</span>
+        <h2 style="margin-top:6px;margin-bottom:4px;">Полный курс китайского языка</h2>
+        <p style="color:var(--text-muted);font-size:0.88rem;">С куратором, проверкой домашних заданий и закрытым VIP-каналом.</p>
+        <div style="display:flex;align-items:baseline;gap:8px;margin:14px 0;">
+          <span style="font-size:1.1rem;color:var(--text-muted);text-decoration:line-through;">799 ₽</span>
+          <span style="font-size:2rem;font-weight:900;color:var(--accent-gold);">299 ₽</span>
+        </div>
+        <ul style="color:var(--text-muted);font-size:0.88rem;padding-left:18px;margin-bottom:16px;line-height:1.6;">
+          <li>30+ видеоуроков с носителями языка</li>
+          <li>Разборы тонов и фонетических нюансов</li>
+          <li>Интерактивные прописи иероглифов HSK 1–3</li>
+          <li>Бессрочный доступ в закрытый VIP-канал</li>
+        </ul>
+        <button class="btn btn-gold" onclick="payCourse()">💳 Оплатить со скидкой (299 ₽)</button>
+      </div>
+    </section>
+  </main>
+
+  <nav>
+    <button class="nav-btn active" onclick="switchTab('home')"><span>🏠</span><span id="n-home">Главная</span></button>
+    <button class="nav-btn" onclick="switchTab('tones')"><span>🎵</span><span id="n-tones">Тоны</span></button>
+    <button class="nav-btn" onclick="switchTab('quiz')"><span>🚀</span><span id="n-quiz">Тест</span></button>
+    <button class="nav-btn" onclick="switchTab('free')"><span>🎁</span><span id="n-free">Уроки</span></button>
+    <button class="nav-btn" onclick="switchTab('offer')"><span>💳</span><span id="n-offer">Курс</span></button>
+  </nav>
+
+  <script>
+    const tg = window.Telegram?.WebApp;
+    if (tg) { tg.ready(); tg.expand(); }
+
+    let lang = "ru";
+    let curQ = 0;
+    let score = { hsk1: 0, hsk2: 0, hsk3: 0 };
+
+    const questions = [
+      {
+        lvl: "HSK 1",
+        q_ru: "Какой тон имеет слог «mā» (мама) в китайском языке?",
+        q_en: "Which tone does the syllable «mā» (mother) have?",
+        opts: [
+          { t_ru: "1-й тон (высокий ровный)", t_en: "1st tone (high flat)", ok: true },
+          { t_ru: "2-й тон (восходящий)", t_en: "2nd tone (rising)", ok: false },
+          { t_ru: "3-й тон (падающе-восходящий)", t_en: "3rd tone (dipping)", ok: false },
+          { t_ru: "4-й тон (резкий нисходящий)", t_en: "4th tone (falling)", ok: false }
+        ],
+        exp_ru: "Правильно: 1-й тон (mā) — высокий и протяжный. 2-й — má, 3-й — mǎ, 4-й — mà.",
+        exp_en: "Correct: 1st tone (mā) is high and level. 2nd is má, 3rd is mǎ, 4th is mà.",
+        cat: "hsk1"
+      },
+      {
+        lvl: "HSK 1",
+        q_ru: "Какое универсальное счетное слово используется со словом «человек» (人)?",
+        q_en: "What universal measure word is used with «person» (人)?",
+        opts: [
+          { t_ru: "只 (zhī)", t_en: "只 (zhī)", ok: false },
+          { t_ru: "本 (běn)", t_en: "本 (běn)", ok: false },
+          { t_ru: "个 (gè)", t_en: "个 (gè)", ok: true },
+          { t_ru: "张 (zhāng)", t_en: "张 (zhāng)", ok: false }
+        ],
+        exp_ru: "Правильно: 一个人 (yī gè rén) — один человек. 个 — самое частое счетное слово.",
+        exp_en: "Correct: 一个人 (yī gè rén) — one person. 个 is the most common measure word.",
+        cat: "hsk1"
+      },
+      {
+        lvl: "HSK 2",
+        q_ru: "Как правильно сказать: «Я вчера не ходил в магазин»?",
+        q_en: "How to correctly say: «I didn't go to the shop yesterday»?",
+        opts: [
+          { t_ru: "我昨天不去商店 (Wǒ zuótiān bù qù...)", t_en: "我昨天不去商店 (Wǒ zuótiān bù qù...)", ok: false },
+          { t_ru: "我昨天没有去商店 (Wǒ zuótiān méiyǒu qù...)", t_en: "我昨天没有去商店 (Wǒ zuótiān méiyǒu qù...)", ok: true },
+          { t_ru: "我昨天不有去商店 (Wǒ zuótiān bù yǒu...)", t_en: "我昨天不有去商店 (Wǒ zuótiān bù yǒu...)", ok: false },
+          { t_ru: "我昨天去了不商店 (Wǒ zuótiān qù le bù...)", t_en: "我昨天去了不商店 (Wǒ zuótiān qù le bù...)", ok: false }
+        ],
+        exp_ru: "Правильно: Для отрицания действий в прошлом используется 没 / 没有 (méi / méiyǒu), а 不 (bù) — для настоящего и будущего.",
+        exp_en: "Correct: Use 没 / 没有 (méi / méiyǒu) for past actions, not 不 (bù).",
+        cat: "hsk2"
+      },
+      {
+        lvl: "HSK 2",
+        q_ru: "Какой союз парный к «虽然...» (suīrán — хотя)?",
+        q_en: "Which conjunction pairs with «虽然...» (suīrán — although)?",
+        opts: [
+          { t_ru: "所以 (suǒyǐ — поэтому)", t_en: "所以 (suǒyǐ — therefore)", ok: false },
+          { t_ru: "但是 (dànshì — однако, но)", t_en: "但是 (dànshì — but)", ok: true },
+          { t_ru: "因为 (yīnwèi — потому что)", t_en: "因为 (yīnwèi — because)", ok: false },
+          { t_ru: "而且 (érqiě — к тому же)", t_en: "而且 (érqiě — moreover)", ok: false }
+        ],
+        exp_ru: "Правильно: Классическая связка HSK 2: 虽然...但是... (хотя..., но...).",
+        exp_en: "Correct: The classic HSK 2 pair is 虽然...但是... (although..., but...).",
+        cat: "hsk2"
+      },
+      {
+        lvl: "HSK 3",
+        q_ru: "Как переводится результативная глагольная связка «听懂» (tīng dǒng)?",
+        q_en: "How is the resultative verb compound «听懂» (tīng dǒng) translated?",
+        opts: [
+          { t_ru: "Слушать музыку", t_en: "Listen to music", ok: false },
+          { t_ru: "Понять на слух (услышать и понять)", t_en: "Understand by hearing", ok: true },
+          { t_ru: "Громко говорить", t_en: "Speak loudly", ok: false },
+          { t_ru: "Забыть слово", t_en: "Forget a word", ok: false }
+        ],
+        exp_ru: "Правильно: 听 (слушать) + 懂 (понимать) = понять на слух.",
+        exp_en: "Correct: 听 (listen) + 懂 (understand) = comprehend by ear.",
+        cat: "hsk3"
+      },
+      {
+        lvl: "HSK 3",
+        q_ru: "Для чего в китайском языке используется грамматическая конструкция с предлогом «把» (bǎ)?",
+        q_en: "What is the grammatical construction with preposition «把» (bǎ) used for?",
+        opts: [
+          { t_ru: "Для сравнения предметов", t_en: "For comparisons", ok: false },
+          { t_ru: "Для переноса/воздействия на объект с изменением его состояния", t_en: "For disposal / moving an object and changing its state", ok: true },
+          { t_ru: "Для прошедшего длительного времени", t_en: "For continuous past tense", ok: false },
+          { t_ru: "Для вежливого отказа", t_en: "For polite refusals", ok: false }
+        ],
+        exp_ru: "Правильно: Конструкция 把 ставит объект перед глаголом, показывая результат воздействия (например: 把书放在桌子上).",
+        exp_en: "Correct: The 把 sentence places the object before the verb to show disposal or change.",
+        cat: "hsk3"
+      }
+    ];
+
+    function toggleLang() {
+      lang = (lang === "ru") ? "en" : "ru";
+      document.getElementById("btn-lang-toggle").innerText = (lang === "ru") ? "🌐 EN" : "🌐 RU";
+      renderQuestion();
+    }
+
+    function switchTab(t) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".nav-btn").forEach(el => el.classList.remove("active"));
+      document.getElementById("tab-" + t).classList.add("active");
+      const order = ["home", "tones", "quiz", "free", "offer"];
+      const i = order.indexOf(t);
+      if (i >= 0) document.querySelectorAll(".nav-btn")[i].classList.add("active");
+      if (t === "quiz" && curQ === 0) renderQuestion();
+      if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
+    }
+
+    // Web Audio Synthesizer for 4 Tones
+    let audioCtx = null;
+    function playTone(tone) {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = "sine";
+        const now = audioCtx.currentTime;
+        const dur = 0.65;
+
+        // Pitch contours for Mandarin tones (Base A = 220Hz / mid pitch)
+        if (tone === 1) { // High flat: 55
+          osc.frequency.setValueAtTime(330, now);
+          osc.frequency.setValueAtTime(330, now + dur);
+        } else if (tone === 2) { // Rising: 35
+          osc.frequency.setValueAtTime(240, now);
+          osc.frequency.exponentialRampToValueAtTime(330, now + dur);
+        } else if (tone === 3) { // Dipping: 214
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.exponentialRampToValueAtTime(170, now + dur * 0.45);
+          osc.frequency.exponentialRampToValueAtTime(290, now + dur);
+        } else if (tone === 4) { // Falling: 51
+          osc.frequency.setValueAtTime(350, now);
+          osc.frequency.exponentialRampToValueAtTime(180, now + dur);
+        }
+
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function renderQuestion() {
+      if (curQ >= questions.length) return showResult();
+      const q = questions[curQ];
+      document.getElementById("q-bar").style.width = ((curQ + 1) / questions.length * 100) + "%";
+      document.getElementById("q-num").innerText = `ВОПРОС ${curQ + 1} ИЗ ${questions.length} • ${q.lvl}`;
+      document.getElementById("q-txt").innerText = (lang === "ru") ? q.q_ru : q.q_en;
+
+      const optsDiv = document.getElementById("q-opts");
+      optsDiv.innerHTML = "";
+      document.getElementById("q-exp").style.display = "none";
+      document.getElementById("q-next").style.display = "none";
+
+      q.opts.forEach((opt, idx) => {
+        const d = document.createElement("div");
+        d.className = "option";
+        d.innerText = (lang === "ru") ? opt.t_ru : opt.t_en;
+        d.onclick = () => selectAnswer(idx);
+        optsDiv.appendChild(d);
+      });
+    }
+
+    function selectAnswer(chosenIdx) {
+      const q = questions[curQ];
+      const opts = document.querySelectorAll(".option");
+      opts.forEach((el, idx) => {
+        el.onclick = null;
+        if (q.opts[idx].ok) el.classList.add("correct");
+        else if (idx === chosenIdx) el.classList.add("wrong");
+      });
+
+      const isOk = q.opts[chosenIdx].ok;
+      if (isOk) score[q.cat]++;
+
+      const exp = document.getElementById("q-exp");
+      exp.innerText = (lang === "ru") ? q.exp_ru : q.exp_en;
+      exp.style.display = "block";
+      document.getElementById("q-next").style.display = "block";
+
+      if (tg?.HapticFeedback) {
+        tg.HapticFeedback.notificationOccurred(isOk ? 'success' : 'warning');
+      }
+    }
+
+    function nextQuestion() {
+      curQ++;
+      if (curQ < questions.length) {
+        renderQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      document.getElementById("q-box").style.display = "none";
+      document.getElementById("res-box").style.display = "block";
+      const total = score.hsk1 + score.hsk2 + score.hsk3;
+      let lvl = "HSK 1 (Начальный)";
+      if (total >= 5) lvl = "HSK 3 (Средний разговорный)";
+      else if (total >= 3) lvl = "HSK 2 (Базовый разговорный)";
+      document.getElementById("res-level").innerText = lvl;
+      document.getElementById("m-tones").innerText = Math.round((score.hsk1 / 2) * 100) + "%";
+      document.getElementById("m-gram").innerText = Math.round((score.hsk2 / 2) * 100) + "%";
+      document.getElementById("m-hsk3").innerText = Math.round((score.hsk3 / 2) * 100) + "%";
+      if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+    }
+
+    function payCourse() {
+      if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('heavy');
+      if (tg?.showPopup) {
+        tg.showPopup({
+          title: "Оплата курса (299 ₽)",
+          message: "В тестовом режиме оплата подтверждается автоматически! Нажмите ОК для перехода в закрытый VIP-канал.",
+          buttons: [{ type: "ok", text: "Войти в VIP-канал" }]
+        }, () => {
+          window.open("https://t.me/+demo_chinese_vip_channel", "_blank");
+        });
+      } else {
+        alert("Оплата успешно подтверждена! Добро пожаловать в VIP-канал.");
+        window.open("https://t.me/+demo_chinese_vip_channel", "_blank");
+      }
+    }
+  </script>
+</body>
+</html>
+
